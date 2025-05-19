@@ -1,21 +1,25 @@
-import MovieCard from "../components/MovieCard";
 import { useState, useEffect } from "react";
-import "../css/Home.css";
+import MovieCard from "../components/MovieCard";
 import { searchMovies, getPopularMovies } from "../services/api";
+import "../css/Home.css";
 
 function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [movies, setMovies] = useState([]);
+  const [allMovies, setAllMovies] = useState([]);
+  const [originalMovies, setOriginalMovies] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchMode, setSearchMode] = useState(false);
 
   useEffect(() => {
     const loadPopularMovies = async () => {
       try {
-        const popularMovies = await getPopularMovies();
-        setMovies(popularMovies);
+        const popular = await getPopularMovies();
+        setAllMovies(popular);
+        setOriginalMovies(popular);
+        setError(null);
       } catch (err) {
-        console.log(err);
+        console.error(err);
         setError("Failed to load movies");
       } finally {
         setLoading(false);
@@ -30,20 +34,36 @@ function Home() {
 
     if (!searchQuery.trim()) return;
 
-    if (loading) return;
-
     setLoading(true);
 
-
     try {
-      const searchResults = await searchMovies(searchQuery);
-      setMovies(searchResults);
+      const results = await searchMovies(searchQuery);
+      console.log("API search results:", results);
+      setAllMovies(results || []);
+      setSearchMode(true);
       setError(null);
     } catch (err) {
-      console.log(err);
-      setError("Failed to load movie");
+      console.error(err);
+      setError("Failed to search movies");
+      setAllMovies([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    if (!value.trim()) {
+      setAllMovies(originalMovies);
+      setSearchMode(false);
+      setError(null);
+    } else if (!searchMode) {
+      const filtered = originalMovies.filter((movie) =>
+        movie.title.toLowerCase().includes(value.toLowerCase())
+      );
+      setAllMovies(filtered);
     }
   };
 
@@ -55,7 +75,7 @@ function Home() {
           placeholder="Search for a movie..."
           className="search-input"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleInputChange}
         />
         <button type="submit" className="search-button">
           Search
@@ -68,10 +88,13 @@ function Home() {
         <div className="loading">Loading...</div>
       ) : (
         <div className="movies-grid">
-          {movies.map((movie) => (
-            movie.title.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
-            <MovieCard movie={movie} key={movie.id} />
-          ))}
+          {allMovies.length > 0 ? (
+            allMovies.map((movie) => (
+              <MovieCard movie={movie} key={movie.id} />
+            ))
+          ) : (
+            <div className="no-results">No movies found.</div>
+          )}
         </div>
       )}
     </div>
