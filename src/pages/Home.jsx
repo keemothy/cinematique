@@ -21,6 +21,7 @@ function Home() {
         setLoading(false);
       }
     };
+
     loadPopularMovies();
   }, []);
 
@@ -32,6 +33,7 @@ function Home() {
     if (loading) return;
 
     setLoading(true);
+
 
     try {
       const searchResults = await searchMovies(searchQuery);
@@ -51,7 +53,7 @@ function Home() {
         <input
           type="text"
           placeholder="Search for a movie..."
-          classname="search-input"
+          className="search-input"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -67,6 +69,7 @@ function Home() {
       ) : (
         <div className="movies-grid">
           {movies.map((movie) => (
+            movie.title.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
             <MovieCard movie={movie} key={movie.id} />
           ))}
         </div>
